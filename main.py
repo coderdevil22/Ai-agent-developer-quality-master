@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, List
 from environment import DevEnv
 
 app = FastAPI()
@@ -12,7 +12,7 @@ class Observation(BaseModel):
     code_quality: int
     features: int
     deadline: int
-    logs: list
+    logs: List[str]
 
 # Action model
 class Action(BaseModel):
@@ -25,9 +25,11 @@ class StepResponse(BaseModel):
     done: bool
     info: Dict = {}
 
-@app.get("/reset", response_model=Observation)
+
+@app.post("/reset", response_model=Observation)
 def reset():
     return env.reset()
+
 
 @app.post("/step", response_model=StepResponse)
 def step(req: Action):
@@ -45,6 +47,7 @@ def step(req: Action):
 @app.get("/state", response_model=Observation)
 def state():
     return env.state()
+
 
 @app.get("/")
 def home():
