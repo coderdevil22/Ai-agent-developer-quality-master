@@ -1,17 +1,56 @@
 name: dev-debug-env
 description: AI environment simulating real-world developer debugging workflows
 
+api:
+  base_url: http://localhost:7860
+
 endpoints:
-  reset: /reset
-  step: /step
-  state: /state
+  reset:
+    method: POST
+    path: /reset
+
+  step:
+    method: POST
+    path: /step
+
+  state:
+    method: GET
+    path: /state
+
+observation_space:
+  type: object
+  properties:
+    bugs:
+      type: integer
+    code_quality:
+      type: integer
+    features:
+      type: integer
+    deadline:
+      type: integer
+    logs:
+      type: array
+      items:
+        type: string
+
+action_space:
+  type: object
+  properties:
+    action:
+      type: string
+      enum:
+        - read_logs
+        - fix_bug
+        - write_feature
+        - refactor_code
+        - do_nothing
 
 tasks:
   - name: easy
-    description: Fix all bugs completely
+    description: Fix all bugs
 
   - name: medium
-    description: Build at least 2 features with minimal bugs
+    description: Build features with minimal bugs
 
   - name: hard
-    description: Optimize features, bugs, code quality, and complete before deadline
+    description: Optimize features, bugs, code quality, and deadline
