@@ -1,0 +1,8 @@
+[project]
+name = "dev-debug-env"
+version = "0.1.0"
+description = "AI environment for developer debugging workflows"
+authors = ["Rajat Sonar"]
+
+[tool.openenv]
+entrypoint = "main:app"
