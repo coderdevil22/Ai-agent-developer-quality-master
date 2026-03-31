@@ -4,7 +4,7 @@ from grader import grade_easy, grade_medium, grade_hard
 BASE = "http://127.0.0.1:8000"
 
 # RESET
-res = requests.get(BASE + "/reset")
+res = requests.post(BASE + "/reset")
 
 if res.status_code != 200:
     print("Error in RESET:", res.text)
