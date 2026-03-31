@@ -3,6 +3,13 @@ name = "dev-debug-env"
 version = "0.1.0"
 description = "AI environment for developer debugging workflows"
 authors = ["Rajat Sonar"]
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "requests",
+    "openenv>=0.2.0"
+]
 
-[tool.openenv]
-entrypoint = "main:app"
+[project.scripts]
+server = "main:app"
