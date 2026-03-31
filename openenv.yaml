@@ -1,0 +1,17 @@
+name: dev-debug-env
+description: AI environment simulating real-world developer debugging workflows
+
+endpoints:
+  reset: /reset
+  step: /step
+  state: /state
+
+tasks:
+  - name: easy
+    description: Fix all bugs completely
+
+  - name: medium
+    description: Build at least 2 features with minimal bugs
+
+  - name: hard
+    description: Optimize features, bugs, code quality, and complete before deadline
