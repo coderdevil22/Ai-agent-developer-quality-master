@@ -1,9 +1,8 @@
-
 import os
 import requests
 from openai import OpenAI
 
-# Required environment variables
+# Environment variables
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
 HF_TOKEN = os.getenv("HF_TOKEN")
@@ -18,13 +17,13 @@ client = OpenAI(
 )
 
 ENV_BASE_URL = "http://127.0.0.1:7860"
-
 ALLOWED_ACTIONS = ["read_logs", "fix_bug", "write_feature", "refactor_code"]
 
 def safe_request(method, url, **kwargs):
     try:
         res = requests.request(method, url, timeout=5, **kwargs)
         res.raise_for_status()
+        # Some endpoints may return non-JSON, but OpenEnv should return JSON
         return res.json(), None
     except Exception as e:
         return None, str(e)
@@ -43,7 +42,6 @@ def get_action_from_llm():
         if action not in ALLOWED_ACTIONS:
             return "fix_bug"
         return action
-
     except Exception:
         return "fix_bug"
 
@@ -51,12 +49,15 @@ def main():
     steps = 0
     rewards = []
     success = False
+    last_error = None
 
     print(f"[START] task=dev-debug env=openenv model={MODEL_NAME}")
 
     try:
-        state, err = safe_request("POST", f"{ENV_BASE_URL}/reset")
+        # Reset environment
+        _, err = safe_request("POST", f"{ENV_BASE_URL}/reset")
         if err:
+            last_error = err
             print(f"[STEP] step=1 action=reset reward=0.00 done=false error={err}")
             return
 
@@ -72,11 +73,13 @@ def main():
             )
 
             if err:
+                last_error = err
                 print(f"[STEP] step={steps + 1} action={action} reward=0.00 done=false error={err}")
                 return
 
             reward = float(data.get("reward", 0))
             done = bool(data.get("done", False))
+
             rewards.append(reward)
 
             print(
@@ -89,6 +92,7 @@ def main():
         success = done
 
     except Exception as e:
+        last_error = str(e)
         print(f"[STEP] step={steps + 1} action=error reward=0.00 done=true error={str(e)}")
         success = False
 
