@@ -2,22 +2,21 @@ import os
 import requests
 from openai import OpenAI
 
-# ENV VARIABLES (STRICT)
-API_BASE_URL = os.environ.get("API_BASE_URL")
-MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
-API_KEY = os.environ.get("API_KEY")
+# Required environment variables
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4.1-mini")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
-if not API_BASE_URL:
-    raise ValueError("API_BASE_URL is required")
+if HF_TOKEN is None:
+    raise ValueError("HF_TOKEN environment variable is required")
 
-if not API_KEY:
-    raise ValueError("API_KEY is required")
-
-# OpenAI client (MANDATORY)
+# OpenAI client
 client = OpenAI(
     base_url=API_BASE_URL,
-    api_key=API_KEY
+    api_key=HF_TOKEN
 )
+
+ALLOWED_ACTIONS = ["read_logs", "fix_bug", "write_feature", "refactor_code"]
 
 def safe_request(method, url, **kwargs):
     try:
@@ -32,39 +31,33 @@ def get_action_from_llm():
         response = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[
-                {"role": "system", "content": "You are a developer agent managing bugs, features, and code quality."},
-                {"role": "user", "content": "Choose ONE action from: read_logs, fix_bug, write_feature, refactor_code. Reply with ONLY the action name."}
+                {"role": "system", "content": "Reply with only one action name."},
+                {"role": "user", "content": "Choose one action from: read_logs, fix_bug, write_feature, refactor_code"}
             ]
         )
-
         action = response.choices[0].message.content.strip().lower()
-
-        if action not in ["read_logs", "fix_bug", "write_feature", "refactor_code"]:
+        if action not in ALLOWED_ACTIONS:
             return "fix_bug"
-
         return action
-
     except Exception:
         return "fix_bug"
 
 def main():
     steps = 0
-    rewards_list = []
+    rewards = []
     success = False
 
     print(f"[START] task=dev-debug env=openenv model={MODEL_NAME}")
 
     try:
-        # RESET
         state, err = safe_request("POST", f"{API_BASE_URL}/reset")
         if err:
-            print(f"[STEP] step=0 action=reset reward=0.00 done=false error={err}")
+            print(f"[STEP] step=1 action=reset reward=0.00 done=false error={err}")
             return
 
         done = False
 
         while not done and steps < 10:
-            # 🔥 LLM decides action
             action = get_action_from_llm()
 
             data, err = safe_request(
@@ -74,31 +67,29 @@ def main():
             )
 
             if err:
-                print(f"[STEP] step={steps} action={action} reward=0.00 done=false error={err}")
-                success = False
-                break
+                print(f"[STEP] step={steps + 1} action={action} reward=0.00 done=false error={err}")
+                return
 
             reward = float(data.get("reward", 0))
-            done = data.get("done", False)
+            done = bool(data.get("done", False))
 
-            rewards_list.append(f"{reward:.2f}")
+            rewards.append(reward)
 
             print(
-                f"[STEP] step={steps} action={action} "
+                f"[STEP] step={steps + 1} action={action} "
                 f"reward={reward:.2f} done={str(done).lower()} error=null"
             )
 
             steps += 1
 
-        # success if no error occurred
-        success = True
+        success = done
 
     except Exception as e:
-        print(f"[STEP] step={steps} action=error reward=0.00 done=true error={str(e)}")
+        print(f"[STEP] step={steps + 1} action=error reward=0.00 done=true error={str(e)}")
         success = False
 
     finally:
-        rewards_str = ",".join(rewards_list)
+        rewards_str = ",".join(f"{r:.2f}" for r in rewards)
         print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}")
 
 if __name__ == "__main__":
