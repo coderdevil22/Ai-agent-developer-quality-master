@@ -64,6 +64,9 @@ Optimize:
 
 Run:
 
+setx API_BASE_URL "http://127.0.0.1:7860"
+setx API_KEY "dummy_key"
+
 uvicorn main:app --host 127.0.0.1 --port 7860
 python inference.py
 
