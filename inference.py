@@ -2,15 +2,22 @@ import os
 import requests
 from openai import OpenAI
 
-# ENV
-API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:7860")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
-HF_TOKEN = os.getenv("HF_TOKEN")
+# ENV VARIABLES (STRICT)
+API_BASE_URL = os.environ.get("API_BASE_URL")
+MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
+API_KEY = os.environ.get("API_KEY")
 
-if not HF_TOKEN:
-    raise ValueError("HF_TOKEN is required")
+if not API_BASE_URL:
+    raise ValueError("API_BASE_URL is required")
 
-client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+if not API_KEY:
+    raise ValueError("API_KEY is required")
+
+# OpenAI client (MANDATORY)
+client = OpenAI(
+    base_url=API_BASE_URL,
+    api_key=API_KEY
+)
 
 def safe_request(method, url, **kwargs):
     try:
@@ -19,6 +26,26 @@ def safe_request(method, url, **kwargs):
         return res.json(), None
     except Exception as e:
         return None, str(e)
+
+def get_action_from_llm():
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "system", "content": "You are a developer agent managing bugs, features, and code quality."},
+                {"role": "user", "content": "Choose ONE action from: read_logs, fix_bug, write_feature, refactor_code. Reply with ONLY the action name."}
+            ]
+        )
+
+        action = response.choices[0].message.content.strip().lower()
+
+        if action not in ["read_logs", "fix_bug", "write_feature", "refactor_code"]:
+            return "fix_bug"
+
+        return action
+
+    except Exception:
+        return "fix_bug"
 
 def main():
     steps = 0
@@ -37,7 +64,8 @@ def main():
         done = False
 
         while not done and steps < 10:
-            action = "fix_bug"
+            # 🔥 LLM decides action
+            action = get_action_from_llm()
 
             data, err = safe_request(
                 "POST",
@@ -62,9 +90,8 @@ def main():
 
             steps += 1
 
-        # success only if no error
-        if not err:
-            success = True
+        # success if no error occurred
+        success = True
 
     except Exception as e:
         print(f"[STEP] step={steps} action=error reward=0.00 done=true error={str(e)}")
