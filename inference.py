@@ -1,40 +1,35 @@
 import requests
+import os
 from grader import grade_easy, grade_medium, grade_hard
 
-BASE = "http://127.0.0.1:8000"
+BASE = os.getenv("API_BASE_URL", "http://127.0.0.1:7860")
+
+def safe_request(method, url, **kwargs):
+    try:
+        res = requests.request(method, url, timeout=5, **kwargs)
+        res.raise_for_status()
+        return res.json()
+    except Exception as e:
+        print("Request failed:", e)
+        return None
 
 # RESET
-res = requests.post(BASE + "/reset")
+reset_data = safe_request("POST", BASE + "/reset")
+if not reset_data:
+    exit(1)
 
-if res.status_code != 200:
-    print("Error in RESET:", res.text)
-    exit()
-
-reset_data = res.json()
 print("RESET:", reset_data)
 
-# ACTIONS (smarter flow)
-actions = [
-    "read_logs",
-    "fix_bug",
-    "fix_bug",
-    "fix_bug",     
-    "refactor_code",
-    "write_feature",
-    "write_feature"
-]
+actions = ["read_logs", "fix_bug", "fix_bug", "write_feature", "refactor_code"]
 
 total_reward = 0
 final_state = None
 
 for action in actions:
-    res = requests.post(BASE + "/step", json={"action": action})
-
-    if res.status_code != 200:
-        print("Error in STEP:", res.text)
-        break
-
-    data = res.json()
+    data = safe_request("POST", BASE + "/step", json={"action": action})
+    
+    if not data:
+        exit(1)
 
     print(f"\nAction: {action}")
     print("State:", data["observation"])
@@ -44,7 +39,6 @@ for action in actions:
     final_state = data["observation"]
 
     if data["done"]:
-        print("\nEpisode finished")
         break
 
 # GRADING
