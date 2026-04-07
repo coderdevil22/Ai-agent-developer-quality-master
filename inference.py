@@ -1,51 +1,78 @@
-import requests
 import os
-from grader import grade_easy, grade_medium, grade_hard
+import requests
+from openai import OpenAI
 
-BASE = os.getenv("API_BASE_URL", "http://127.0.0.1:7860")
+# ENV
+API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:7860")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+if not HF_TOKEN:
+    raise ValueError("HF_TOKEN is required")
+
+client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
 def safe_request(method, url, **kwargs):
     try:
         res = requests.request(method, url, timeout=5, **kwargs)
         res.raise_for_status()
-        return res.json()
+        return res.json(), None
     except Exception as e:
-        print("Request failed:", e)
-        return None
+        return None, str(e)
 
-# RESET
-reset_data = safe_request("POST", BASE + "/reset")
-if not reset_data:
-    exit(1)
+def main():
+    steps = 0
+    rewards_list = []
+    success = False
 
-print("RESET:", reset_data)
+    print(f"[START] task=dev-debug env=openenv model={MODEL_NAME}")
 
-actions = ["read_logs", "fix_bug", "fix_bug", "write_feature", "refactor_code"]
+    try:
+        # RESET
+        state, err = safe_request("POST", f"{API_BASE_URL}/reset")
+        if err:
+            print(f"[STEP] step=0 action=reset reward=0.00 done=false error={err}")
+            return
 
-total_reward = 0
-final_state = None
+        done = False
 
-for action in actions:
-    data = safe_request("POST", BASE + "/step", json={"action": action})
-    
-    if not data:
-        exit(1)
+        while not done and steps < 10:
+            action = "fix_bug"
 
-    print(f"\nAction: {action}")
-    print("State:", data["observation"])
-    print("Reward:", data["reward"])
+            data, err = safe_request(
+                "POST",
+                f"{API_BASE_URL}/step",
+                json={"action": action}
+            )
 
-    total_reward += data["reward"]
-    final_state = data["observation"]
+            if err:
+                print(f"[STEP] step={steps} action={action} reward=0.00 done=false error={err}")
+                success = False
+                break
 
-    if data["done"]:
-        break
+            reward = float(data.get("reward", 0))
+            done = data.get("done", False)
 
-# GRADING
-if final_state:
-    print("\n---- TASK SCORES ----")
-    print("Easy:", grade_easy(final_state))
-    print("Medium:", grade_medium(final_state))
-    print("Hard:", grade_hard(final_state))
+            rewards_list.append(f"{reward:.2f}")
 
-print("\nTOTAL REWARD:", total_reward)
+            print(
+                f"[STEP] step={steps} action={action} "
+                f"reward={reward:.2f} done={str(done).lower()} error=null"
+            )
+
+            steps += 1
+
+        # success only if no error
+        if not err:
+            success = True
+
+    except Exception as e:
+        print(f"[STEP] step={steps} action=error reward=0.00 done=true error={str(e)}")
+        success = False
+
+    finally:
+        rewards_str = ",".join(rewards_list)
+        print(f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}")
+
+if __name__ == "__main__":
+    main()
