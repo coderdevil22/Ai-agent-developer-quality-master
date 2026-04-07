@@ -17,4 +17,4 @@ RUN pip install --no-cache-dir --upgrade pip && \
     httpx==0.27.0
 
 # 🔥 RUN SERVER + INFERENCE
-CMD sh -c "uvicorn main:app --host 0.0.0.0 --port 7860 & sleep 5 && python inference.py"
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 7860"]
