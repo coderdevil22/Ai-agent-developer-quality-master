@@ -1,11 +1,5 @@
 # Dev Debug AI Environment
 
--------------The below is the link to view the agent flow --------------------------------------------
-
-https://RAJTZCODE-dev-debug-env.hf.space/docs
-
-------------------------------------------------------------------------------------------------
-
 ## 🚀 Overview
 
 This project simulates a real-world software development workflow where an AI agent learns how to debug code, manage features, and optimize code quality under time constraints.
@@ -13,6 +7,7 @@ This project simulates a real-world software development workflow where an AI ag
 Unlike simple environments, this system models realistic developer behavior such as reading logs before fixing bugs and balancing feature development with code quality.
 
 ---
+
 ## 🧠 Environment Design
 
 ### State (Observation)
@@ -24,6 +19,7 @@ Unlike simple environments, this system models realistic developer behavior such
 * `logs`: List of system error logs
 
 ---
+
 ### Actions
 
 * `read_logs` → Understand issues before fixing
@@ -33,6 +29,7 @@ Unlike simple environments, this system models realistic developer behavior such
 * `do_nothing` → Penalized
 
 ---
+
 ## 🎯 Tasks
 
 ### Easy
@@ -53,6 +50,7 @@ Optimize:
 * Deadline
 
 ---
+
 ## 🏆 Reward Design
 
 * Positive reward for meaningful actions
@@ -61,19 +59,22 @@ Optimize:
 * Encourages strategic decision-making
 
 ---
+
 ## 🤖 Inference
 
 Run:
 
-uvicorn main:app --reload
+uvicorn main:app --host 127.0.0.1 --port 7860
 python inference.py
 
 ---
+
 ## 📦 Deployment
 
 This project is containerized using Docker and deployable on Hugging Face Spaces.
 
 ---
+
 ## 💡 Why This Matters
 
 This environment models real developer workflows and can be used to train AI agents for debugging and decision-making in software engineering tasks.
