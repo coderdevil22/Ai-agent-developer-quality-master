@@ -1,31 +1,20 @@
-def grade_easy(state):
-    # reward for reducing bugs
-    score = 1 - (state["bugs"] / 5)
-    return max(0.1, min(0.9, score))
+FROM python:3.10.13-slim-bullseye
 
+WORKDIR /app
 
-def grade_medium(state):
-    score = 0
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-    # features progress
-    score += min(state["features"] * 0.2, 0.4)
+COPY . .
 
-    # bugs penalty
-    score += max(0, (2 - state["bugs"]) * 0.2)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+    fastapi==0.110.0 \
+    uvicorn==0.27.1 \
+    requests==2.31.0 \
+    pydantic==2.6.4 \
+    openai==1.30.1 \
+    httpx==0.27.0
 
-    return max(0.1, min(0.9, score))
-
-
-def grade_hard(state):
-    score = 0
-
-    if state["features"] >= 2:
-        score += 0.3
-
-    if state["bugs"] <= 1:
-        score += 0.3
-
-    if state["code_quality"] >= 70:
-        score += 0.3
-
-    return max(0.1, min(0.9, score))
+# ✅ ONLY RUN SERVER (IMPORTANT)
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
