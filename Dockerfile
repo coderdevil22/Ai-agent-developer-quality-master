@@ -16,5 +16,5 @@ RUN pip install --no-cache-dir --upgrade pip && \
     openai==1.30.1 \
     httpx==0.27.0
 
-# 🔥 RUN SERVER + INFERENCE
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port 7860"]
+# ✅ ONLY RUN SERVER (IMPORTANT)
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
