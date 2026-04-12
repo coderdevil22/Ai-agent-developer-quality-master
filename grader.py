@@ -1,27 +1,31 @@
 def grade_easy(state):
-    if state["bugs"] == 0:
-        return 1.0
-    return 0.0
+    # reward for reducing bugs
+    score = 1 - (state["bugs"] / 5)
+    return max(0.1, min(0.9, score))
 
 
 def grade_medium(state):
-    if state["features"] >= 2 and state["bugs"] <= 2:
-        return 1.0
-    elif state["features"] >= 1:
-        return 0.5
-    return 0.0
+    score = 0
+
+    # features progress
+    score += min(state["features"] * 0.2, 0.4)
+
+    # bugs penalty
+    score += max(0, (2 - state["bugs"]) * 0.2)
+
+    return max(0.1, min(0.9, score))
 
 
 def grade_hard(state):
     score = 0
 
-    if state["features"] >= 3:
+    if state["features"] >= 2:
         score += 0.3
+
     if state["bugs"] <= 1:
         score += 0.3
-    if state["code_quality"] >= 70:
-        score += 0.2
-    if state["deadline"] > 0:
-        score += 0.2
 
-    return score
+    if state["code_quality"] >= 70:
+        score += 0.3
+
+    return max(0.1, min(0.9, score))
