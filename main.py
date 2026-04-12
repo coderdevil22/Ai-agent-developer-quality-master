@@ -18,19 +18,19 @@ class Observation(BaseModel):
 class Action(BaseModel):
     action: str
 
-# Response model
+# Step response
 class StepResponse(BaseModel):
     observation: Observation
     reward: float
     done: bool
     info: Dict = {}
 
-
+# ✅ POST RESET (IMPORTANT FIX)
 @app.post("/reset", response_model=Observation)
 def reset():
     return env.reset()
 
-
+# ✅ STEP
 @app.post("/step", response_model=StepResponse)
 def step(req: Action):
     state, reward, done = env.step(req.action)
@@ -39,16 +39,15 @@ def step(req: Action):
         "observation": state,
         "reward": reward,
         "done": done,
-        "info": {
-            "message": "Step executed successfully"
-        }
+        "info": {}
     }
 
+# STATE (optional)
 @app.get("/state", response_model=Observation)
 def state():
     return env.state()
 
-
+# HOME
 @app.get("/")
 def home():
     return {"message": "Dev Debug Environment Running"}
